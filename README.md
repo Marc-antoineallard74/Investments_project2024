@@ -1,2 +1,2 @@
-# investments_project
+# Investments_project
 Final investments project
