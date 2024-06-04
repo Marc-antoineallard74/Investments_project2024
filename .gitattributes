@@ -1,0 +1,2 @@
+data/stock_data_part1.parquet filter=lfs diff=lfs merge=lfs -text
+data/*.parquet filter=lfs diff=lfs merge=lfs -text
