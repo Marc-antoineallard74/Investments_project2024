@@ -19,3 +19,17 @@ def plot_decile_metrics(returns, title):
     metrics_df.plot(kind='bar', subplots=True, layout=(3, 1), figsize=(10, 8), title=title, legend=False)
     plt.tight_layout()
     plt.show()
+    
+def  plot_strategy_performance(data, metrics, columns):
+    fig, axes = plt.subplots(1, len(metrics), figsize=(18, 6))
+
+
+    for i, metric in enumerate(metrics):
+        ax = axes[i]
+        data.plot(kind='bar', x='Metric', y=[columns],
+                    ax=ax, legend=True)
+        ax.set_title(metric)
+        ax.set_ylabel(metric)
+
+    plt.tight_layout()
+    plt.show()
