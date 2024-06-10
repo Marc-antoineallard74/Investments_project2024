@@ -26,7 +26,7 @@ def  plot_strategy_performance(data, metrics, columns):
 
     for i, metric in enumerate(metrics):
         ax = axes[i]
-        data.plot(kind='bar', x='Metric', y=[columns],
+        data.plot(kind='bar', x='Metric', y=columns,
                     ax=ax, legend=True)
         ax.set_title(metric)
         ax.set_ylabel(metric)
