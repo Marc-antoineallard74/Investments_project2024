@@ -50,38 +50,39 @@ def plot_metrics(returns, title):
 # --------------------------- Weighting Strategies --------------------------- #
 
 # Equal weight strategy
-def ew_strategy(data, columns):
-    strategy_returns = data[columns].mean(axis=1)
+def ew_strategy(data, asset_columns):
+    strategy_returns = data[asset_columns].mean(axis=1)
     return strategy_returns
 
 # Value weight strategy
-def vw_strategy(data, columns):
-    strategy_returns = data[columns].apply(lambda x: np.average(x['Rn'], weights=x['mcap']), axis=1)
+def vw_strategy(data, asset_columns):
+    strategy_returns = data[asset_columns].apply(lambda x: np.average(x['Rn'], weights=x['mcap']), axis=1)
     return strategy_returns
 
 # Risk parity strategy
-def rp_strategy(data, columns):
-    volatilities = data[columns].rolling(window=12).std()
+def rp_strategy(data, asset_columns):
+    volatilities = data[asset_columns].rolling(window=12).std()
     inverse_vols = 1 / volatilities
     weights = inverse_vols.div(inverse_vols.sum(axis=1), axis=0)
-    strategy_returns = (weights * data[columns]).sum(axis=1)
+    strategy_returns = (weights * data[asset_columns]).sum(axis=1)
     return strategy_returns
 
 # Mean-variance optimization strategy
 def mv_strategy(data, columns):
     returns = data[columns]
-    mean_returns = returns.rolling(window=12).mean()
-    cov_matrix = returns.rolling(window=12).cov()
-    
-    def get_optimal_weights(mean_returns, cov_matrix, lambda_=0.1):
-        cov_matrix += lambda_ * np.eye(len(cov_matrix))  # Regularization
-        inv_cov = np.linalg.inv(cov_matrix)
-        ones = np.ones(len(mean_returns))
-        weights = inv_cov.dot(ones) / ones.dot(inv_cov).dot(ones)
-        return weights
 
-    optimal_weights = mean_returns.apply(lambda x: get_optimal_weights(x, cov_matrix.loc[x.name]), axis=1)
-    strategy_returns = (optimal_weights * returns).sum(axis=1)
+    mu = returns.mean()
+    rf = data['rf'].mean()
+
+    sigma = returns.cov()
+    sigma_inv = np.linalg.inv(sigma)
+
+    A = np.sum(sigma_inv)
+    B = np.sum(sigma_inv @ mu)
+
+    w_tan = sigma_inv @ (mu - rf) / (B - A*rf)
+
+    strategy_returns = returns @ w_tan
     return strategy_returns
 
 # ---------------------------------- Scaling --------------------------------- #
