@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set_theme(style='whitegrid')
 
-def annualized_metrics(returns, rf):
+def annualized_metrics(returns, rf=0.0):
     mean_return = (returns-rf).mean() * 12
     std_dev = returns.std() * np.sqrt(12)
     sharpe_ratio = mean_return / std_dev
