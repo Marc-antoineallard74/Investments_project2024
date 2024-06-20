@@ -25,7 +25,7 @@ def plot_strategy_performance(data, metrics, columns):
 
 def plot_metrics(returns, title):
     # Calculate annualized mean, standard deviation, and Sharpe ratio
-    metrics = returns.apply(annualized_metrics, axis=0)
+    metrics = returns.apply(annualized_metrics)
 
     # As DataFrame
     metrics_df = metrics.T.rename(columns={0: 'Mean', 1: 'Volatility', 2: 'Sharpe Ratio'})
