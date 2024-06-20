@@ -12,15 +12,13 @@ def annualized_metrics(returns, rf=0.0):
 # ----------------------------------- Plots ---------------------------------- # 
 
 def plot_strategy_performance(data, metrics, columns):
-    fig, axes = plt.subplots(1, len(metrics), figsize=(18, 6))
+    fig = plt.figure(figsize=(18, 6))
+    ax = fig.add_subplot(111)  # Add a single subplot
 
-
-    for i, metric in enumerate(metrics):
-        ax = axes[i]
-        data.plot(kind='bar', x='Metric', y=columns,
-                    ax=ax, legend=True)
-        ax.set_title(metric)
-        ax.set_ylabel(metric)
+    data.plot(kind='bar', x='Metric', y=columns,
+                ax=ax, legend=True)
+    ax.set_title('IV Factors Strategy Metrics')
+    ax.set_ylabel('Value')
 
     plt.tight_layout()
     plt.show()
