@@ -62,8 +62,9 @@ def rp_strategy(data, asset_columns):
     volatilities = data[asset_columns].rolling(window=12).std()
     inverse_vols = 1 / volatilities
     weights = inverse_vols.div(inverse_vols.sum(axis=1), axis=0)
-    strategy_returns = (weights * data[asset_columns]).sum(axis=1)
-    return strategy_returns
+    returns = (weights * data[asset_columns]).sum(axis=1)
+    weights.columns = [f'w_{a}' for a in asset_columns]
+    return weights, returns
 
 # Mean-variance optimization strategy
 def mv_strategy(data, columns):
