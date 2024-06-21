@@ -151,12 +151,13 @@ def mom(i):
     from utils import plot_metrics
 
     # Load the data
+    q=10
+    data = pd.read_parquet(f'{DATA_PATH}/deciles/mom_deciles.parquet')
     import re
-    #data = pd.read_parquet('stock_data.parquet')
-    data = pd.read_parquet(f'{DATA_PATH}/stock_data.parquet')
     #with open('Siccodes12.txt', 'r') as file:
     with open(f'{DATA_PATH}/Siccodes12.txt', 'r') as file:
         lines = file.readlines()
+    
 
 
     ff12_mapping = []
@@ -192,33 +193,6 @@ def mom(i):
     
     data.shape
 
-
-    # In[30]:
-
-
-    from tqdm.auto import tqdm  # for notebooks
-    tqdm.pandas()
-
-    # Ensure date is in datetime format
-    data['date'] = pd.to_datetime(data['date'])
-
-    # Calculate cumulative returns for each stock over the past 11 months
-    data['cum_Rn'] = data.groupby('permno')['Rn'].rolling(11).progress_apply(lambda x: np.prod(1 + x) - 1).reset_index(level=0, drop=True)
-
-    # Remove rows with NaN cumulative returns
-    data = data.dropna(subset=['cum_Rn'])
-
-    # Sort stocks into deciles based on cumulative return
-    data['decile'] = data.groupby('date')['cum_Rn'].transform(lambda x: pd.qcut(x, 10, labels=False, duplicates = 'drop') + 1)
-
-
-    
-
-
-    # In[31]:
-
-
-    # Compute equal-weighted returns for each decile
     ew_returns = data.groupby(['date', 'decile'])['Rn'].mean().unstack()
 
 
@@ -230,46 +204,38 @@ def mom(i):
     vw_returns = data.groupby(['date', 'decile']).apply(lambda x: np.average(x['Rn'], weights=x['mcap'])).unstack()
 
     
+    short_d = range(1, 4)
+    long_d = range(q-2, q+1)
+
+    data['w_L_ew'] = (data['decile'].isin(long_d))
+    data['w_L_ew'] = data['w_L_ew']/data.groupby(['date'])['w_L_ew'].transform('sum')
+
+    data['w_S_ew'] = (data['decile'].isin(short_d))
+    data['w_S_ew'] = data['w_S_ew']/data.groupby(['date'])['w_S_ew'].transform('sum')
+
+    data['w_MoM_ew'] = data['w_L_ew'] + data['w_S_ew']
+
+    long_ew = data.groupby('date').apply(lambda x: np.sum(x['Rn']*x['w_L_ew'])).reset_index()[0]
+    short_ew = data.groupby('date').apply(lambda x: np.sum(x['Rn']*x['w_S_ew'])).reset_index()[0]
+    mom_ew = data.groupby('date').apply(lambda x: np.sum(x['Rn']*x['w_MoM_ew'])).reset_index()[0]
 
 
-    # *b) The momentum strategy is then the portfolio that goes long the three highest deciles and short the three lowest decile portfolios. Compute and compare the mean, stan- dard deviation, and Sharpe ratios of the long and short legs of the strategy as well as of the strategy itself. Test if the strategy has an average return that is statistically significantly different from zero. Repeat both tests for equal and value-weighted portfolios.*
+    data['w_L_vw'] = (data['decile'].isin(long_d))*data['mcap']
+    data['w_L_vw'] = data['w_L_vw'] / data.groupby(['date'])['w_L_vw'].transform('sum')
 
-    # In[33]:
+    data['w_S_vw'] = (data['decile'].isin(short_d))*data['mcap']
+    data['w_S_vw'] = data['w_S_vw']/data.groupby(['date'])['w_S_vw'].transform('sum')
 
+    data['w_MoM_vw'] = data['w_L_vw'] + data['w_S_vw']
 
-    # Long-Short Momentum Portfolio
-    long_ew = ew_returns.loc[:, 8:10].sum(axis=1)
-    short_ew = - ew_returns.loc[:, 0:2].sum(axis=1)
-    mom_ew = long_ew + short_ew
-
-    
-
-    # Statistical significance testing
-    t_stat_equal, p_value_equal = stats.ttest_1samp(mom_ew, 0)
-    print(f"Equal-Weighted Long-Short Strategy: t-stat={t_stat_equal}, p-value={p_value_equal}")
+    long_vw = data.groupby('date').apply(lambda x: np.sum(x['Rn']*x['w_L_vw'])).reset_index()
+    short_vw = data.groupby('date').apply(lambda x: np.sum(x['Rn']*x['w_S_vw'])).reset_index()
+    mom_vw = data.groupby('date').apply(lambda x: np.sum(x['Rn']*x['w_MoM_vw'])).reset_index()
 
 
-    # In[34]:
-
-
-    # Step 4: Long-Short Momentum Portfolio
-    long_vw = vw_returns.loc[:, 8:10].sum(axis=1)
-    short_vw = - vw_returns.loc[:, 0:2].sum(axis=1)
-    mom_vw = long_vw + short_vw
-
-    
-
-    # Statistical significance testing
-    t_stat_value, p_value_value = stats.ttest_1samp(mom_vw, 0)
-    print(f"Value-Weighted Long-Short Strategy: t-stat={t_stat_value}, p-value={p_value_value}")
-
-
-    # In[35]:
-
-
-    mom_df = mom_vw.reset_index().rename(columns={0: 'MoM'})
-    mom_df['date'] = mom_df['date'].dt.to_period('M')
-    return mom_df
+    mom_vw.columns = ['date', 'MoM']
+    mom_vw['date'] = mom_vw['date'].dt.to_period('M')
+    return mom_vw
 
 
 def iv(i):
